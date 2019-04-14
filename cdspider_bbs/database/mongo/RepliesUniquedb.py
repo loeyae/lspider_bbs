@@ -9,8 +9,9 @@
 :version: SVN: $Id: Uniquedb.py 2430 2018-07-31 01:30:48Z zhangyi $
 """
 from pymongo.errors import *
-from cdspider.database.base import RepliesUniqueDB as BaseRepliesUniqueDB
+from cdspider_bbs.database.base import RepliesUniqueDB as BaseRepliesUniqueDB
 from cdspider.database.mongo.Mongo import Mongo, SplitTableMixin
+
 
 class RepliesUniqueDB(Mongo, BaseRepliesUniqueDB, SplitTableMixin):
 
@@ -46,5 +47,5 @@ class RepliesUniqueDB(Mongo, BaseRepliesUniqueDB, SplitTableMixin):
                 tablename = self._collection_name(str(i))
                 collection = self._db.get_collection(tablename)
                 indexes = collection.index_information()
-                if not 'unid' in indexes:
+                if 'unid' not  in indexes:
                     collection.create_index('unid', unique=True, name='unid')

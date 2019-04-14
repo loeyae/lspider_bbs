@@ -9,8 +9,9 @@
 """
 import time
 from cdspider.database.base import ArticlesDB as BaseArticlesDB
-from cdspider.database.base import RepliesDB as BaseRepliesDB
+from cdspider_bbs.database.base import RepliesDB as BaseRepliesDB
 from cdspider.database.mongo.Mongo import Mongo, SplitTableMixin
+
 
 class RepliesDB(Mongo, BaseRepliesDB, SplitTableMixin):
     """
@@ -49,21 +50,21 @@ class RepliesDB(Mongo, BaseRepliesDB, SplitTableMixin):
         where['rid'] = rid
         return self.find(table=table, where=where, select=select, **kwargs)
 
-    def get_count(self, ctime, where = {}, select = None, **kwargs):
+    def get_count(self, ctime, where={}, select=None, **kwargs):
         table = self._get_collection(ctime)
         return self.count(table=table, where=where, select=select, **kwargs)
 
     def _get_collection(self, ctime):
         suffix = time.strftime("%Y%m", time.localtime(ctime))
         name = super(RepliesDB, self)._collection_name(suffix)
-        if not name in self._collections:
+        if name not  in self._collections:
             self._create_collection(name)
         return name
 
     def _table_name(self, id):
         suffix, _ = BaseArticlesDB.unbuild_id(id)
         name = super(RepliesDB, self)._collection_name(suffix)
-        if not name in self._collections:
+        if name not  in self._collections:
             self._create_collection(name)
         return name
 
@@ -71,20 +72,20 @@ class RepliesDB(Mongo, BaseRepliesDB, SplitTableMixin):
         self._list_collection()
         suffix = time.strftime("%Y%m")
         name = super(RepliesDB, self)._collection_name(suffix)
-        if not name in self._collections:
+        if name not  in self._collections:
             self._create_collection(name)
 
     def _create_collection(self, table):
         collection = self._db.get_collection(table)
         indexes = collection.index_information()
-        if not 'uuid' in indexes:
+        if 'uuid' not  in indexes:
             collection.create_index('uuid', unique=True, name='uuid')
-        if not 'rid' in indexes:
+        if 'rid' not  in indexes:
             collection.create_index('rid', name='rid')
-        if not 'unid' in indexes:
+        if 'unid' not  in indexes:
             collection.create_index('unid', unique=True, name='unid')
-        if not 'pubtime' in indexes:
+        if 'pubtime' not  in indexes:
             collection.create_index('pubtime', name='pubtime')
-        if not 'ctime' in indexes:
+        if 'ctime' not  in indexes:
             collection.create_index('ctime', name='ctime')
         self._collections.add(table)

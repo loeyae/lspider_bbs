@@ -8,8 +8,9 @@
 :date:    2018-12-12 20:51:39
 """
 import time
-from cdspider.database.base import ForumRuleDB as BaseForumRuleDB
+from cdspider_bbs.database.base import ForumRuleDB as BaseForumRuleDB
 from cdspider.database.mongo.Mongo import Mongo
+
 
 class ForumRuleDB(Mongo, BaseForumRuleDB):
     """
@@ -24,15 +25,15 @@ class ForumRuleDB(Mongo, BaseForumRuleDB):
         super(ForumRuleDB, self).__init__(connector, table = table, **kwargs)
         collection = self._db.get_collection(self.table)
         indexes = collection.index_information()
-        if not 'uuid' in indexes:
+        if 'uuid' not  in indexes:
             collection.create_index('uuid', unique=True, name='uuid')
-        if not 'domain' in indexes:
+        if 'domain' not  in indexes:
             collection.create_index('domain', name='domain')
-        if not 'subdomain' in indexes:
+        if 'subdomain' not  in indexes:
             collection.create_index('subdomain', name='subdomain')
-        if not 'status' in indexes:
+        if 'status' not  in indexes:
             collection.create_index('status', name='status')
-        if not 'ctime' in indexes:
+        if 'ctime' not  in indexes:
             collection.create_index('ctime', name='ctime')
 
     def insert(self, obj):
@@ -47,7 +48,7 @@ class ForumRuleDB(Mongo, BaseForumRuleDB):
         obj['utime'] = int(time.time())
         return super(ForumRuleDB, self).update(setting=obj, where={"uuid": int(id)}, multi=False)
 
-    def delete(self, id, wherer = {}):
+    def delete(self, id, where = {}):
         if not where:
             where = {'uuid': int(id)}
         else:
