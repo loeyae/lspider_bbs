@@ -14,6 +14,7 @@ from cdspider.database.base import ArticlesDB
 from cdspider.parser import ItemParser, CustomParser
 from cdspider.parser.lib import TimeParser
 from cdspider.libs.constants import *
+from cdspider.handler import HandlerUtils
 
 
 class BbsItemHandler(BaseHandler):
@@ -24,8 +25,6 @@ class BbsItemHandler(BaseHandler):
     支持注册的插件:
         bbs-item_handler.result_handle
             data参数为 {"save": save, "domain": domain, "subdomain": subdomain}
-        bbs-item_handler.finish_handle
-            data参数为 {"save": save, "rid": rid, "dao": DAO name}
     """
 
     def get_scripts(self):
@@ -317,7 +316,9 @@ class BbsItemHandler(BaseHandler):
                 self.debug("%s on_result unique: %s @ %s" % (self.__class__.__name__, str(inserted), str(unid)))
             if self.page == 1:
                 # 格式化文章信息
-                result = self._build_result_info(final_url=self.response['final_url'], typeinfo=typeinfo, result=self.response['parsed']['main'], crawlinfo=self.task['article']['crawlinfo'], **unid)
+                result = self._build_result_info(
+                    final_url=self.response['final_url'], typeinfo=typeinfo,result=self.response['parsed']['main'],
+                    crawlinfo=self.task['article']['crawlinfo'], **unid)
                 if self.testing_mode:
                     '''
                     testing_mode打开时，数据不入库
@@ -343,7 +344,7 @@ class BbsItemHandler(BaseHandler):
                 对于已存在的文章，如果是第一页，则更新所有解析到的内容
                 否则只追加content的内容
                 '''
-                #格式化文章信息
+                # 格式化文章信息
                 result = self._build_result_info(final_url=self.response['final_url'], typeinfo=typeinfo, result=self.response['parsed']['main'], crawlinfo=self.task['article']['crawlinfo'], item = result)
 
                 if self.testing_mode:
@@ -372,8 +373,9 @@ class BbsItemHandler(BaseHandler):
                     inserted, unid = (True, {"acid": "test_mode", "ctime": ctime})
                     self.debug("%s test mode: %s" % (self.__class__.__name__, unid))
                 else:
-                    #生成唯一ID, 并判断是否已存在
-                    inserted, unid = self.db['RepliesUniqueDB'].insert(self.get_unique_setting(self.response['url'], each), ctime)
+                    # 生成唯一ID, 并判断是否已存在
+                    inserted, unid = self.db['RepliesUniqueDB'].insert(
+                        self.get_unique_setting(self.response['url'], each), ctime)
                     self.debug("%s on_result unique: %s @ %s" % (self.__class__.__name__, str(inserted), str(unid)))
                 if inserted:
                     result = self._build_replies_info(result=each, final_url=self.response['final_url'], **unid)
@@ -400,8 +402,8 @@ class BbsItemHandler(BaseHandler):
         if self.page == 1:
             if self.task.get('parentid') and self.task['article'].get('crawlinfo') and not self.testing_mode:
                 self.db['ArticlesDB'].update(self.task['parentid'], {"crawlinfo": self.task['article']['crawlinfo']})
-                self.extension("finish_handle", {"save": save, "rid": self.task["parentid"],
-                                                 "dao": ArticlesDB.__name__})
+                HandlerUtils.send_result_into_queue(self.queue, self.ctx.obj.get("app_config"), self.mode,
+                                                    self.task['parentid'])
         if "uuid" in self.task and self.task['uuid']:
             crawlinfo = self.task.get('crawlinfo', {}) or {}
             self.crawl_info['crawl_end'] = int(time.time())
