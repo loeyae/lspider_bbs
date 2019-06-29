@@ -47,17 +47,6 @@ class BbsItemHandler(BaseHandler):
         初始化爬虫流程
         :output self.process {"request": 请求设置, "parse": 解析规则, "paging": 分页规则, "unique": 唯一索引规则}
         """
-        if 'forumRule' in self.task:
-            typeinfo = utils.typeinfo(self.task['url'])
-            if typeinfo['domain'] != self.task['forumRule']['domain'] or typeinfo['subdomain'] != self.task['forumRule']['subdomain']:
-                raise CDSpiderNotUrlMatched()
-            if  'urlPattern' in self.task['forumRule'] and self.task['forumRule']['urlPattern']:
-                '''
-                如果规则中存在url匹配规则，则进行url匹配规则验证
-                '''
-                u = utils.preg(self.task['url'], self.task['forumRule']['urlPattern'])
-                if not u:
-                    raise CDSpiderNotUrlMatched()
         if "rid" in self.task and 'uuid' not  in self.task:
             rid = self.task['rid']
             del self.task['rid']
@@ -71,14 +60,16 @@ class BbsItemHandler(BaseHandler):
                 raise CDSpiderHandlerError("aritcle: %s not exists" % rid)
             if 'ulr' not  in self.task or not self.task['url']:
                 self.task["url"] = article['url']
-                save['base_url'] = article['url']
+            self.task['crawlinfo'] = article.get('crawlinfo', {})
             self.task['article'] = article
         self.task.setdefault('article', {})
         self.task.setdefault('crawlinfo', {})
-        self.process = self.match_rule() or {"unique": {"data": None}}
-        if 'data' not  in self.process['unique'] or not self.process['unique']['data']:
-            self.process['unique']['data'] = ','. join(self.process['parse']['item'].keys())
-        save['paging'] = True
+        if not self.task.get("url"):
+            raise CDSpiderHandlerError("url not exists")
+        save['base_url'] = self.task.get("url")
+        self.process = self.match_rule() or {"unique": {"data": None}, "parse": {"title": None, "content": None}}
+        if 'data' not in self.process['unique'] or not self.process['unique']['data']:
+            self.process['unique']['data'] = ",".join(self.process['parse']['item'].keys())
         if 'save' in self.task and self.task['save'] and 'page' in self.task['save']:
             self.page = self.task['save']['page']
 
@@ -87,7 +78,24 @@ class BbsItemHandler(BaseHandler):
         匹配详情页规则
         """
         # 优先获取task中详情规则
-        parse_rule = self.task.get("forumRule", {})
+        parse_rule = None
+        # 优先获取task中详情规则
+        if "rule" in self.task and self.task['rule']:
+            parse_rule = self.db['ForumRuleDB'].get_detail(int(self.task['rule']))
+            if not parse_rule:
+                raise CDSpiderDBDataNotFound("rule: %s not exists" % self.task['rule'])
+
+            typeinfo = utils.typeinfo(self.task['url'])
+            if typeinfo['domain'] != self.task['forumRule']['domain'] or typeinfo['subdomain'] != self.task['forumRule']['subdomain']:
+                raise CDSpiderNotUrlMatched()
+            if 'urlPattern' in self.task['forumRule'] and self.task['forumRule']['urlPattern']:
+                '''
+                如果规则中存在url匹配规则，则进行url匹配规则验证
+                '''
+                u = utils.preg(self.task['url'], self.task['forumRule']['urlPattern'])
+                if not u:
+                    raise CDSpiderNotUrlMatched()
+
         if not parse_rule:
             '''
             task中不存在详情规则，根据域名匹配规则库中的规则
