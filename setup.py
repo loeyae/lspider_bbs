@@ -29,7 +29,6 @@ setup(
         'cdspider.dao.mongo': [
             'RepliesUniqueDB=cdspider_bbs.database.mongo:RepliesUniqueDB',
             'RepliesDB=cdspider_bbs.database.mongo:RepliesDB',
-            'ForumRuleDB=cdspider_bbs.database.mongo:ForumRuleDB',
         ]
     }
 )
