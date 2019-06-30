@@ -7,6 +7,5 @@
 :date:    2019/4/10 10:37
 """
 
-from .ForumRuledb import ForumRuleDB
 from .Repliesdb import RepliesDB
 from .RepliesUniquedb import RepliesUniqueDB
